@@ -183,6 +183,9 @@ public class kv2csv {
             for (int i = 0; i < args.length; i++) {
                 String arg = args[i];
                 if (arg.startsWith("-")) {
+                    if (arg.contains("h")) {
+                        printHelp();
+                    }
                     if (arg.contains("f")) this.follow = true;
                     if (arg.contains("b")) this.beauty = true;
                     if (arg.contains("id") && (i + 1 < args.length)) {
@@ -205,7 +208,26 @@ public class kv2csv {
             if (this.beauty) outDelimiter = "|";
         }
     }
-
+    protected static void printHelp(){
+        String help ="Tool converts key-value line in csv table." +eol+
+                "Usage:"+eol+
+                "  kv2csv [options] [file]"+eol+
+                "Options:"+eol+
+                "  -id    define input delimiter, default is colon ':'"+eol+
+                "  -od    define output csv delimiter, default is comma ','"+eol+
+                "  -b     output is human readable table"+eol+
+                "  -f     follows for input and prints output line for every input line"+eol+
+                "         print header, if keys input list was updated"+eol+
+                "  -c -k  define desired keys/columns for reading, default: all keys "+eol+
+                "         keys list couls be separated by comma, space, colon, semicolon" +eol+
+                "  -h     print this help and exit."+eol+
+                "Examples:"+eol+
+                "  java kv2csv -b file        (converts file and prints in human readable table in stdout)"+eol+
+                "  java kv2csv -c 'id,object' (gets lines from stdin and prints csv table with only 2 columns: id and object) "+eol+
+                "  java kv2csv -f             (gets lines from stdin and prints csv table line by line) ";
+        System.out.println(help);
+        System.exit(0);
+    }
     public static String cleanFromQuotes(String s) {
         return s.replaceAll("\"|\'", "");
     }
