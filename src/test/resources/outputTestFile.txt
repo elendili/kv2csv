@@ -1,0 +1,9 @@
+aP,cd[0].v,cd[1].n,x,sh,key,pt,file,t,e
+mxpv=5,cd1,name,,,,,,,
+,,,x-buy,10,key-v,xr,,,
+,,,x-buy,10,key-v2,x,,,
+,,,x-buy,10,key-v3,x,,,
+,,,,,,,given file,2,1
+,,,,,,,C/,3,0
+,,,x-sell,,,,,,
+

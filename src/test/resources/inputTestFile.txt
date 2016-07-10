@@ -1,0 +1,14 @@
+aP=mxpv=5:cd[0].v=cd1:cd[1].n=name
+wrong x=x-buy:sh=10:key=key-v:pt=xr:wrong
+wrong x=x-buy:sh=10:pt=x::::key=key-v2:wrong
+x=x-buy::key=key-v3:pt=x:sh=10:
+file=given file:t=2:e=1
+file=C/:t=3:e=0
+:x=x-sell:
+        'wrong'
+
+''
+:
+key=-9.2
+key1=key1-value2
+=wrong
