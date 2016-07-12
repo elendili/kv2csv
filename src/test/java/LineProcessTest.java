@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import static org.junit.Assert.assertEquals;
 
 public class LineProcessTest {
+    public final static String eol = System.lineSeparator();
     //@formatter:off
     @Test public void cleanLineTest() {
         assertEquals("x=x-buy:sh=10:key=key-v:pt=xr:",
@@ -25,8 +26,8 @@ public class LineProcessTest {
 
     @Test public void extractMapTest() {
         kv2csv kv = new kv2csv();
-        assertEquals("{}",kv.extractMap("        'wrong'\n").toString());
-        assertEquals("{}",kv.extractMap("        =wrong\n").toString());
+        assertEquals("{}",kv.extractMap("        'wrong'"+eol).toString());
+        assertEquals("{}",kv.extractMap("        =wrong"+eol).toString());
         assertEquals("{1=3}",kv.extractMap("1=2:1=3").toString());
         assertEquals("{1=1=3}",kv.extractMap("1=1=2:1=1=3").toString());
         assertEquals("==3",kv.extractMap("1===2:1===3").get("1"));
@@ -34,7 +35,7 @@ public class LineProcessTest {
     @Test public void getValueStringTest() {
         kv2csv kv = new kv2csv();
         kv.header = new LinkedHashMap(){{put("1",1);put("2",22);put("3",3);}};
-        assertEquals("1,2,3\n",kv.getOutputHeader());
+        assertEquals("1,2,3"+eol,kv.getOutputHeader());
     }
 
     @Test public void expandColumnTest(){
