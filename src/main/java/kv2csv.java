@@ -263,10 +263,14 @@ public class kv2csv {
                 "  -c -k  define desired keys/columns for output, default: all keys " + eol +
                 "         keys list could be separated by comma, space, colon, semicolon" +
                 "         regexp could be used for key definition." + eol +
+                "  -x     define undesired keys/columns which should be filtered out" + eol +
+                "         keys list could be separated by comma, space, colon, semicolon" +
+                "         regexp could be used for key definition." + eol +
                 "  -h     print this help and exit." + eol +
                 "Examples:" + eol +
                 "  java kv2csv -b file        (converts file and prints in human readable table in stdout)" + eol +
                 "  java kv2csv -c 'id,object' (gets lines from stdin and prints csv table with only 2 columns: id and object) " + eol +
+                "  java kv2csv -x 'tag.*'     (gets lines from stdin and prints csv table without columns which started from tag) " + eol +
                 "  java kv2csv -f             (gets lines from stdin and prints csv table line by line) " +
                 "  java kv2csv -c 'i.*'       (prints csv table with columns which started from 'i') ";
         System.out.println(help);
