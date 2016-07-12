@@ -1,11 +1,13 @@
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -17,11 +19,13 @@ public class kv2csvTest {
     private BufferedReader reader;
     private ByteArrayOutputStream os;
     public final static String eol = System.lineSeparator();
+    private PrintStream originalOut;
 
     @Before
     public void setUpStreams() throws IOException {
         os = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(os);
+        originalOut = System.out;
         System.setOut(ps);
     }
 
@@ -92,12 +96,12 @@ public class kv2csvTest {
                         + "=wrong";
 
         String expected =
-                kv2csv.ANSI_GREEN + "aP    |cd[0].v|cd[1].n" + kv2csv.ANSI_RESET + eol +
+                kv2csv.colorizeLine( "aP    |cd[0].v|cd[1].n")+eol +
                         "mxpv=5|cd1    |name   " + eol +
-                        kv2csv.ANSI_GREEN + "aP    |cd[0].v|cd[1].n|file      |t|e" + kv2csv.ANSI_RESET + eol +
+                        kv2csv.colorizeLine("aP    |cd[0].v|cd[1].n|file      |t|e") + eol +
                         "      |       |       |given file|2|1" + eol +
                         "aPV   |       |       |          | | " + eol +
-                        kv2csv.ANSI_GREEN + "aP         |cd[0].v|cd[1].n|file      |t|e" + kv2csv.ANSI_RESET + eol +
+                        kv2csv.colorizeLine("aP         |cd[0].v|cd[1].n|file      |t|e")+ eol +
                         "aPdsdasdasd|       |       |          | | " + eol +
                         "a          |       |       |          | | " + eol;
         new kv2csv("-fb").process(new ByteArrayInputStream(actual.getBytes()), os);
@@ -114,7 +118,7 @@ public class kv2csvTest {
                         + "    aP=a:    'wrong'" + eol
                         + "=wrong";
 
-        String expected = kv2csv.ANSI_GREEN + "aP         |cd[0].v|cd[1].n|file      |t|e" + kv2csv.ANSI_RESET + eol +
+        String expected = kv2csv.colorizeLine("aP         |cd[0].v|cd[1].n|file      |t|e") + eol +
                 "mxpv=5     |cd1    |name   |          | | " + eol +
                 "           |       |       |given file|2|1" + eol +
                 "aPV        |       |       |          | | " + eol +
@@ -145,10 +149,55 @@ public class kv2csvTest {
                         + "=wrong";
 
         String expected =
-                kv2csv.ANSI_GREEN + "aP|cd[0].v|cd[1].n" + kv2csv.ANSI_RESET + eol +
-                        kv2csv.ANSI_GREEN + "aP|cd[0].v|cd[1].n|file|t|e" + kv2csv.ANSI_RESET + eol +
-                        kv2csv.ANSI_GREEN + "aP|cd[0].v|cd[1].n|file|t|e" + kv2csv.ANSI_RESET + eol;
+                        kv2csv.colorizeLine("aP|cd[0].v|cd[1].n" ) + eol +
+                        kv2csv.colorizeLine("aP|cd[0].v|cd[1].n|file|t|e" ) + eol +
+                        kv2csv.colorizeLine("aP|cd[0].v|cd[1].n|file|t|e" ) + eol;
         new kv2csv("-fbn").process(new ByteArrayInputStream(actual.getBytes()), os);
+        assertEquals(expected, os.toString());
+    }
+
+    @Test
+    public void withDefaultTime() {
+        String actual =
+                "2016-07-11 07:34:00,095 [Module 123123] INFO 13123: :key=value:" + eol +
+                        "2016-07-11 07:37:05,024 [123123] DEBUG 123123: key2=value2:" + eol;
+
+        String expected =
+                "time,key,key2" + eol +
+                        "2016-07-11 07:34:00 095,value," + eol +
+                        "2016-07-11 07:37:05 024,,value2" + eol;
+
+        new kv2csv().process(new ByteArrayInputStream(actual.getBytes()), os);
+        assertEquals(expected, os.toString());
+    }
+
+    @Test
+    public void withProperlyDefinedTime() {
+        String actual =
+                "2016-07-11 07:34:00,095 [Module 123123] INFO 13123: :key=value:" + eol +
+                        "2016-07-11 07:37:05,024 [123123] DEBUG 123123: key2=value2:" + eol;
+
+        String expected =
+                "time,key,key2" + eol +
+                        "2016-07-11 07:34,value," + eol +
+                        "2016-07-11 07:37,,value2" + eol;
+
+        new kv2csv("-t", "'\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}'").process(new ByteArrayInputStream(actual.getBytes()), os);
+        assertEquals(expected, os.toString());
+    }
+
+    @Test(expected = PatternSyntaxException.class)
+    public void withImProperlyDefinedTime() {
+        new kv2csv("-t", "'\\d{4 '").process(new ByteArrayInputStream("".getBytes()), os);
+    }
+
+
+    @Test
+    public void withProperlyDefinedTimeWhichCantFind() {
+        String actual = "2016-07-11 07:34:00,095 [Module 123123] INFO 13123: :key=value:" ;
+        String expected = "key" + eol +
+                        "value" + eol;
+        new kv2csv("-t", "'\\d{10}'").process(new ByteArrayInputStream(actual.getBytes()), os);
         assertEquals(expected, os.toString());
     }
 
@@ -157,6 +206,14 @@ public class kv2csvTest {
         String actual = "aP=mxpv=5:cd[0].v=cd1:cd[1].n=name" + eol;
         String expected = "aP,cd[0].v,cd[1].n" + eol +
                 "mxpv=5,cd1,name" + eol;
+        new kv2csv("-c").process(new ByteArrayInputStream(actual.getBytes()), os);
+        assertEquals(expected, os.toString());
+    }
+    @Test
+    public void captionsUndefinedWithTime() {
+        String actual = "2016-07-11 07:34:00,095 aP=mxpv=5:cd[0].v=cd1:cd[1].n=name" + eol;
+        String expected = "time,aP,cd[0].v,cd[1].n" + eol +
+                "2016-07-11 07:34:00 095,mxpv=5,cd1,name" + eol;
         new kv2csv("-c").process(new ByteArrayInputStream(actual.getBytes()), os);
         assertEquals(expected, os.toString());
     }
@@ -169,6 +226,22 @@ public class kv2csvTest {
         new kv2csv("-c", "'aP'").process(new ByteArrayInputStream(actual.getBytes()), os);
         assertEquals(expected, os.toString());
     }
+    @Test
+    public void support() {
+        System.setOut(originalOut);
+        new kv2csv("-support").process(new ByteArrayInputStream("".getBytes()), os);
+    }
+
+
+    @Test
+    public void captionsDefinedWithTime() {
+        String actual = "2016-07-11 07:34:00,095 aP=mxpv=5:aPP=a:aP*=apV" + eol;
+        String expected = "time,aP" + eol +
+                "2016-07-11 07:34:00 095,mxpv=5" + eol;
+        new kv2csv("-c", "'aP,ti.*'").process(new ByteArrayInputStream(actual.getBytes()), os);
+        assertEquals(expected, os.toString());
+    }
+
 
     @Test
     public void captionsDefinedAsRegexp() {

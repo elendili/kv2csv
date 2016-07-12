@@ -23,6 +23,10 @@ public class LineProcessTest {
         assertEquals("{t=, x=x buy, sh=10, key=key v, pt=xr}",
                 new kv2csv().getMapFromLine("t=:x=x buy:sh= 10:key= key v :pt= xr :").toString());
     }
+    @Test public void extractTimeTest() {
+        assertEquals("2016-07-11 07:34:00 095",
+                new kv2csv().extractTime("2016-07-11 07:34:00,095 [Module 123123] INFO 13123: :key=value:"));
+    }
 
     @Test public void extractMapTest() {
         kv2csv kv = new kv2csv();

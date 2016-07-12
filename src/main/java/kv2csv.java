@@ -6,12 +6,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class kv2csv {
+    private static final String TIME_KEY = "time";
     List<LinkedHashMap<String, String>> list = new LinkedList<>();
     LinkedHashMap<String, Integer> header = new LinkedHashMap<>();
     public final static String eol = System.lineSeparator();
     boolean headerUpdated = true;
     final Arguments args;
     final Pattern cleanLinePattern;
+    final static boolean systemSupportsAnsiColors = System.getenv("SHELL")!=null;
 
 
     public static final String ANSI_RESET = "\u001B[0m";
@@ -41,6 +43,7 @@ public class kv2csv {
 
 
     public void process(InputStream inputStream, OutputStream outputStream) {
+        if (!args.doParsing) return;
         LinkedHashMap<String, String> map;
         try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
              OutputStreamWriter out = new OutputStreamWriter(outputStream);
@@ -92,6 +95,16 @@ public class kv2csv {
             toReturn = lhm;
         }
 
+
+        if (toReturn.containsKey(TIME_KEY)) {
+            LinkedHashMap<String, String> lhm = new LinkedHashMap<>();
+            lhm.put(TIME_KEY, toReturn.get(TIME_KEY));
+            toReturn.keySet().stream()
+                    .filter(inKey -> !inKey.equals(TIME_KEY))
+                    .forEach(inKey -> lhm.put(inKey, map.get(inKey)));
+            toReturn = lhm;
+        }
+
         return toReturn;
     }
 
@@ -111,8 +124,16 @@ public class kv2csv {
         String s = header.keySet().stream()
                 .map(e -> args.names ? e : expandColumnIfBeauty(header.get(e), e))
                 .collect(Collectors.joining(args.outDelimiter));
-        if (args.beauty) s = ANSI_GREEN + s + ANSI_RESET;
+        if (args.beauty) s = colorizeLine(s);
         return s.concat(eol);
+    }
+
+    static String colorizeLine(String string) {
+        if (systemSupportsAnsiColors){
+            String color = ANSI_GREEN;
+            return color + string + ANSI_RESET;
+        } else return string;
+
     }
 
     public String getValueString(final LinkedHashMap<String, String> map) {
@@ -151,9 +172,20 @@ public class kv2csv {
         headerUpdated = !oldHeader.equals(header);
     }
 
-    public LinkedHashMap<String, String> extractMap(String line) {
-        line = cleanLine(line);
-        return getMapFromLine(line);
+    public LinkedHashMap<String, String> extractMap(String originalLine) {
+        String cleanedLine = cleanLine(originalLine);
+        LinkedHashMap<String, String> map = getMapFromLine(cleanedLine);
+        String time;
+        if (!(time = extractTime(originalLine)).isEmpty())
+            map.put(TIME_KEY, time);
+        return map;
+    }
+
+    public String extractTime(String string) {
+        Matcher matcher = args.timePattern.matcher(string);
+        String time = "";
+        if (matcher.find()) time = matcher.group().replaceAll(args.outDelimiter, " ");
+        return time;
     }
 
     public final String cleanLine(String line) {
@@ -208,8 +240,10 @@ public class kv2csv {
         boolean follow = false;
         boolean beauty = false;
         boolean names = false;
+        boolean doParsing = true;
         String outDelimiter = ",";
         String inputDelimiter = ":";
+        Pattern timePattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(,\\d{3})?");
         LinkedList<String> captions;
         LinkedList<String> exclusiveCaptions;
         String filePath;
@@ -220,12 +254,17 @@ public class kv2csv {
                 if (arg.startsWith("-")) {
                     if (arg.contains("h")) {
                         printHelp();
+                        doParsing = false;
                     }
                     if (arg.contains("f")) this.follow = true;
                     if (arg.contains("b")) this.beauty = true;
                     if (arg.contains("n")) this.names = true;
                     if (arg.contains("id") && (i + 1 < args.length)) {
                         this.inputDelimiter = cleanFromQuotes(args[i + 1]);
+                        i++;
+                    }
+                    if (arg.contains("t") && (i + 1 < args.length)) {
+                        this.timePattern = Pattern.compile(cleanFromQuotes(args[i + 1]));
                         i++;
                     }
                     if (arg.contains("od") && (i + 1 < args.length)) {
@@ -240,6 +279,13 @@ public class kv2csv {
                         this.exclusiveCaptions = getNotEmptyListFromArgumentOrNull(args[i + 1]);
                         i++;
                     }
+                    if (arg.contains("support")) {
+                        System.out.println("Sys properties========================================");
+                        System.out.println(System.getProperties().toString().replaceAll(", ",eol));
+                        System.out.println("Env variables========================================");
+                        System.out.println(System.getenv().toString().replaceAll(", ",eol));
+                        doParsing =false;
+                    }
                 } else {
                     filePath = arg;
                 }
@@ -247,35 +293,35 @@ public class kv2csv {
             }
             if (this.beauty) outDelimiter = "|";
         }
+
+        protected void printHelp() {
+            String help = "Tool converts key-value line in csv table." + eol +
+                    "Usage:" + eol +
+                    "  kv2csv [options] [file]" + eol +
+                    "Options:" + eol +
+                    "  -id    define input delimiter, default is colon ':'" + eol +
+                    "  -od    define output csv delimiter, default is comma ','" + eol +
+                    "  -b     output is human readable table" + eol +
+                    "  -f     follows for input and prints output line for every input line" + eol +
+                    "         print header, if keys input list was updated" + eol +
+                    "  -n     prints only headers " + eol +
+                    "  -t     define pattern of time for parsing. by default pattern is " + timePattern + eol +
+                    "  -c -k  define desired keys/columns (in regexp) for output, default: all keys " + eol +
+                    "         keys list could be separated by comma, space, colon, semicolon" + eol +
+                    "  -x     define undesired keys/columns (in regexp) which should be filtered out, default no one" + eol +
+                    "         keys list could be separated by comma, space, colon, semicolon" + eol +
+                    "  -h     print this help and exit." + eol +
+                    "Examples:" + eol +
+                    "  kv2csv -b file               (converts file and prints in human readable table in stdout)" + eol +
+                    "  kv2csv -c 'id,object'        (gets lines from stdin and prints csv table with only 2 columns: id and object) " + eol +
+                    "  kv2csv -x 'tag.*'            (gets lines from stdin and prints csv table without columns which started from tag) " + eol +
+                    "  kv2csv -f                    (gets lines from stdin and prints csv table line by line) " + eol +
+                    "  kv2csv -c 'i.*'              (prints csv table with columns which started from 'i') " + eol +
+                    "  kv2csv -t '\\d{2}:\\d{2}'      (prints 'time' column if pattern matches time in line) ";
+            System.out.println(help);
+        }
     }
 
-    protected static void printHelp() {
-        String help = "Tool converts key-value line in csv table." + eol +
-                "Usage:" + eol +
-                "  kv2csv [options] [file]" + eol +
-                "Options:" + eol +
-                "  -id    define input delimiter, default is colon ':'" + eol +
-                "  -od    define output csv delimiter, default is comma ','" + eol +
-                "  -b     output is human readable table" + eol +
-                "  -f     follows for input and prints output line for every input line" + eol +
-                "         print header, if keys input list was updated" + eol +
-                "  -n     prints only headers " + eol +
-                "  -c -k  define desired keys/columns for output, default: all keys " + eol +
-                "         keys list could be separated by comma, space, colon, semicolon" +
-                "         regexp could be used for key definition." + eol +
-                "  -x     define undesired keys/columns which should be filtered out" + eol +
-                "         keys list could be separated by comma, space, colon, semicolon" +
-                "         regexp could be used for key definition." + eol +
-                "  -h     print this help and exit." + eol +
-                "Examples:" + eol +
-                "  java kv2csv -b file        (converts file and prints in human readable table in stdout)" + eol +
-                "  java kv2csv -c 'id,object' (gets lines from stdin and prints csv table with only 2 columns: id and object) " + eol +
-                "  java kv2csv -x 'tag.*'     (gets lines from stdin and prints csv table without columns which started from tag) " + eol +
-                "  java kv2csv -f             (gets lines from stdin and prints csv table line by line) " +
-                "  java kv2csv -c 'i.*'       (prints csv table with columns which started from 'i') ";
-        System.out.println(help);
-        System.exit(0);
-    }
 
     public static String cleanFromQuotes(String s) {
         return s.replaceAll("\"|\'", "").trim();
