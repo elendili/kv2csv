@@ -184,7 +184,7 @@ public class kv2csv {
     public String extractTime(String string) {
         Matcher matcher = args.timePattern.matcher(string);
         String time = "";
-        if (matcher.find()) time = matcher.group().replaceAll(args.outDelimiter, " ");
+        if (matcher.find()) time = matcher.group().replaceAll(Pattern.quote(args.outDelimiter), " ");
         return time;
     }
 

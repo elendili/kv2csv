@@ -186,6 +186,22 @@ public class kv2csvTest {
         assertEquals(expected, os.toString());
     }
 
+
+    @Test
+    public void withTimeInBeautyMode() {
+        String actual =
+                "2016-07-11 07:34:00,095 [Module 123123] INFO 13123: :key=value:" + eol +
+                        "2016-07-11 07:37:05,024 [123123] DEBUG 123123: key2=value2:" + eol;
+
+        String expected =
+                kv2csv.colorizeLine("time                   |key  |key2  ") + eol +
+                                    "2016-07-11 07:34:00,095|value|      " + eol +
+                                    "2016-07-11 07:37:05,024|     |value2" + eol;
+
+        new kv2csv("-b").process(new ByteArrayInputStream(actual.getBytes()), os);
+        assertEquals(expected, os.toString());
+    }
+
     @Test(expected = PatternSyntaxException.class)
     public void withImProperlyDefinedTime() {
         new kv2csv("-t", "'\\d{4 '").process(new ByteArrayInputStream("".getBytes()), os);
