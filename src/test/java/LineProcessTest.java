@@ -8,20 +8,20 @@ public class LineProcessTest {
     public final static String eol = System.lineSeparator();
     //@formatter:off
     @Test public void cleanLineTest() {
-        assertEquals("x=x-buy:sh=10:key=key-v:pt=xr:",
-                new kv2csv().cleanLine("wrong x=x-buy:sh=10:key=key-v:pt=xr:wrong"));
+        assertEquals("x=x-hut:ty=10:key=key-v:ui=xr:",
+                new kv2csv().cleanLine("wrong x=x-hut:ty=10:key=key-v:ui=xr:wrong"));
     }
 
-    @Test public void cleanLineTest2() { assertEquals("t=:x=x buy:sh= 10:key= key v :pt= xr :",
-            new kv2csv().cleanLine(":=:  t=:x=x buy:sh= 10:key= key v :pt= xr :   :::=:"));
+    @Test public void cleanLineTest2() { assertEquals("t=:x=x hut:ty= 10:key= key v :ui= xr :",
+            new kv2csv().cleanLine(":=:  t=:x=x hut:ty= 10:key= key v :ui= xr :   :::=:"));
     }
-    @Test public void cleanLineTest3() { assertEquals("aP=mxpv=5:cd[0].v=cd1:cd[1].n=name",
-            new kv2csv().cleanLine("aP=mxpv=5:cd[0].v=cd1:cd[1].n=name"));
+    @Test public void cleanLineTest3() { assertEquals("aP=mbgh=5:kd[0].v=cd1:kd[1].n=name",
+            new kv2csv().cleanLine("aP=mbgh=5:kd[0].v=cd1:kd[1].n=name"));
     }
 
     @Test public void getMapTest() {
-        assertEquals("{t=, x=x buy, sh=10, key=key v, pt=xr}",
-                new kv2csv().getMapFromLine("t=:x=x buy:sh= 10:key= key v :pt= xr :").toString());
+        assertEquals("{t=, x=x hut, ty=10, key=key v, ui=xr}",
+                new kv2csv().getMapFromLine("t=:x=x hut:ty= 10:key= key v :ui= xr :").toString());
     }
     @Test public void extractTimeTest() {
         assertEquals("2016-07-11 07:34:00 095",

@@ -1,7 +1,7 @@
-aP=mxpv=5:cd[0].v=cd1:cd[1].n=name
-wrong x=x-buy:sh=10:key=key-v:pt=xr:wrong
-wrong x=x-buy:sh=10:pt=x::::key=key-v2:wrong
-x=x-buy::key=key-v3:pt=x:sh=10:
+aP=mbgh=5:kd[0].v=cd1:kd[1].n=name
+wrong x=x-hut:ty=10:key=key-v:ui=xr:wrong
+wrong x=x-hut:ty=10:ui=x::::key=key-v2:wrong
+x=x-hut::key=key-v3:ui=x:ty=10:
 file=given file:t=2:e=1
 file=C/:t=3:e=0
 :x=x-sell:
