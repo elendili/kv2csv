@@ -48,7 +48,8 @@ public class kv2csv {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
              OutputStreamWriter out = new OutputStreamWriter(outputStream);
         ) {
-            for (String line; in.ready() && (line = in.readLine()) != null; ) {
+            while (inputStream.available()==-1 || !in.ready());
+            for (String line; (line = in.readLine()) != null; ) {
                 map = extractMap(line);
                 map = filterByCaptions(map);
                 if (map.size() > 0) {
@@ -62,6 +63,7 @@ public class kv2csv {
                             out.append(getValueString(map)).append(eol);
                     } else list.add(map);
                 }
+                out.flush();
             }
             if (!args.follow) {
                 out.append(getOutputHeader());
@@ -112,8 +114,7 @@ public class kv2csv {
         list.stream().map(e -> getValueString(e))
                 .forEach(e -> {
                     try {
-                        out.append(e);
-                        out.append(eol);
+                        out.append(e+eol);
                     } catch (IOException e1) {
                         throw new RuntimeException(e1);
                     }
