@@ -7,16 +7,18 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 
 public class kv2csvTest {
-    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-    private BufferedReader reader;
     private ByteArrayOutputStream os;
     public final static String eol = System.lineSeparator();
     private PrintStream originalOut;
@@ -27,6 +29,12 @@ public class kv2csvTest {
         PrintStream ps = new PrintStream(os);
         originalOut = System.out;
         System.setOut(ps);
+    }
+
+    @After
+    public void cleanUpStreams() {
+        System.setOut(originalOut);
+//        System.setErr(originalErr);
     }
 
     @Test
@@ -169,6 +177,21 @@ public class kv2csvTest {
 
         new kv2csv().process(new ByteArrayInputStream(actual.getBytes()), os);
         assertEquals(expected, os.toString());
+    }
+
+
+    @Test
+    @Ignore
+    public void longLine() {
+        AtomicInteger l =new AtomicInteger(80);
+        List<String> tagValues = Stream.generate(() -> ((char)l.incrementAndGet()) +"="+ ((char)l.get()))
+                .limit(50).collect(toList());
+        String actual = String.join(":",tagValues);
+        originalOut.println(actual);
+
+        new kv2csv("-").process(new ByteArrayInputStream(actual.getBytes()), os);
+        originalOut.println(os.toString());
+        assertEquals(50, os.toString().split("\n")[0].split(",").length);
     }
 
     @Test
@@ -327,11 +350,6 @@ public class kv2csvTest {
         assertEquals(expected, os.toString());
     }
 
-    @After
-    public void cleanUpStreams() {
-        System.setOut(null);
-        System.setErr(null);
-    }
 
 
 }
