@@ -181,7 +181,6 @@ public class kv2csvTest {
 
 
     @Test
-    @Ignore
     public void longLine() {
         AtomicInteger l =new AtomicInteger(80);
         List<String> tagValues = Stream.generate(() -> ((char)l.incrementAndGet()) +"="+ ((char)l.get()))
@@ -300,9 +299,9 @@ public class kv2csvTest {
 
     @Test
     public void onlyExcludeCaptionsDefinedAsRegexp() {
-        String actual = "aP=mbgh=5:aPP=a:aP*=apV:a1=1:ap=2" + eol;
+        String actual = "aP=mbgh=5:aPP=a:aP*=apV:a1=1:ap=2:ad=3" + eol;
         String expected = "a1,ap" + eol + "1,2" + eol;
-        new kv2csv("-x", "aP.*").process(new ByteArrayInputStream(actual.getBytes()), os);
+        new kv2csv("-x", "aP.*:ad").process(new ByteArrayInputStream(actual.getBytes()), os);
         assertEquals(expected, os.toString());
     }
 
@@ -311,7 +310,7 @@ public class kv2csvTest {
         String actual = "4=v4:3=v3:2=v2:1=v1:::" + eol;
         String expected = "1,2,3" + eol +
                 "v1,v2,v3" + eol;
-        new kv2csv("-c", "'1,2,3'").process(new ByteArrayInputStream(actual.getBytes()), os);
+        new kv2csv("-c", "1,2,3").process(new ByteArrayInputStream(actual.getBytes()), os);
         assertEquals(expected, os.toString());
     }
 

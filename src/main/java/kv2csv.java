@@ -89,11 +89,9 @@ public class kv2csv {
 
         if (args.exclusiveCaptions != null) {
             LinkedHashMap<String, String> lhm = new LinkedHashMap<>();
-            for (String regexpKey : args.exclusiveCaptions) {
                 toReturn.keySet().stream()
-                        .filter(inKey -> !inKey.matches(regexpKey))
+                        .filter(inKey -> args.exclusiveCaptions.stream().noneMatch(exKey->inKey.matches(exKey)))
                         .forEach(inKey -> lhm.put(inKey, map.get(inKey)));
-            }
             toReturn = lhm;
         }
 
